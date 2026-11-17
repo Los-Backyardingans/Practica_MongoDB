@@ -3,7 +3,7 @@
 # Practica MongoDB - PROGRAMACIÓN II
 # Archivo: conexion.py
 # Descripción:
-# Este módulo permite conectar Python con MySQL y MongoDB.
+# Este permite conectar Python con MySQL y MongoDB.
 # ==========================================================
 
 import mysql.connector

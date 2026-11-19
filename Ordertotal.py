@@ -156,3 +156,75 @@ def crear_ordertotal():
                 }
 
                 lista_detalles.append(documento_detalle)
+
+            documento_pedido = {
+
+                # Información general del pedido
+                "OrderID": numero_pedido,
+                "OrderDate": pedido.get("OrderDate"),
+                "RequiredDate": pedido.get("RequiredDate"),
+                "ShippedDate": pedido.get("ShippedDate"),
+
+                # Información del envío
+                "ShipName": pedido.get("ShipName"),
+                "ShipAddress": pedido.get("ShipAddress"),
+                "ShipCity": pedido.get("ShipCity"),
+                "ShipRegion": pedido.get("ShipRegion"),
+                "ShipPostalCode": pedido.get("ShipPostalCode"),
+                "ShipCountry": pedido.get("ShipCountry"),
+                "Freight": pedido.get("Freight"),
+
+                # Información relacionada
+                "Customer": limpiar_documento(cliente),
+                "Employee": limpiar_documento(empleado),
+                "Shipper": limpiar_documento(transportista),
+
+                # Productos incluidos en el pedido
+                "Details": lista_detalles,
+
+                # Total calculado de la factura
+                "InvoiceTotal": Decimal128(total_factura)
+            }
+
+            documentos_ordertotal.append(documento_pedido)
+
+
+            coleccion = base_datos["Ordertotal"]
+
+            coleccion.delete_many({})
+
+            if documentos_ordertotal:
+                coleccion.insert_many(documentos_ordertotal)
+
+            print("\n==========================================")
+            print("       RESUMEN DE ORDERTOTAL")
+            print("==========================================")
+
+            print(f"Pedidos procesados: {len(pedidos)}")
+
+            print(f"Documentos creados: {len(documentos_ordertotal)}")
+
+            print(f"Detalles relacionados: {len(detalles)}")
+
+            print("\n¡Colección Ordertotal creada correctamente!")
+
+    except Exception as error:
+
+        print("\nError al construir Ordertotal:")
+        print(error)
+
+    finally:
+
+        # Cerrar la conexión con MongoDB
+        if cliente_mongo is not None:
+            cliente_mongo.close()
+
+            print("\nConexión MongoDB cerrada.")
+
+
+# ==========================================================
+# EJECUCIÓN PRINCIPAL
+# ==========================================================
+
+if name == "main":
+    crear_ordertotal()

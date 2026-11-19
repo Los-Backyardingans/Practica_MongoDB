@@ -98,3 +98,61 @@ def crear_ordertotal():
 
             detalles_por_pedido[numero_pedido].append(detalle)
 
+        documentos_ordertotal = []
+
+        for pedido in pedidos:
+
+            numero_pedido = pedido["OrderID"]
+            codigo_cliente = pedido.get("CustomerID")
+            codigo_empleado = pedido.get("EmployeeID")
+            codigo_transportista = pedido.get("ShipVia")
+
+            cliente = mapa_clientes.get(codigo_cliente)
+            empleado = mapa_empleados.get(codigo_empleado)
+            transportista = mapa_transportistas.get(
+                codigo_transportista
+            )
+
+            detalles_pedido = detalles_por_pedido.get(
+                numero_pedido, []
+            )
+
+            lista_detalles = []
+
+            total_factura = Decimal("0")
+
+            for detalle in detalles_pedido:
+                codigo_producto = detalle["ProductID"]
+
+                producto = mapa_productos.get(codigo_producto)
+
+                precio = convertir_decimal(
+                    detalle.get("UnitPrice")
+                )
+
+                cantidad = detalle.get("Quantity", 0)
+
+                descuento = convertir_decimal(
+                    detalle.get("Discount")
+                )
+
+                total_linea = (
+                        precio
+                        * Decimal(str(cantidad))
+                        * (Decimal("1") - descuento)
+                )
+
+                total_factura += total_linea
+
+                documento_detalle = {
+
+                    "Product": limpiar_documento(producto),
+
+                    "ProductID": codigo_producto,
+                    "Quantity": cantidad,
+                    "UnitPrice": Decimal128(precio),
+                    "Discount": Decimal128(descuento),
+                    "LineTotal": Decimal128(total_linea)
+                }
+
+                lista_detalles.append(documento_detalle)

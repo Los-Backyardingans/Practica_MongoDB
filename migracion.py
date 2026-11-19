@@ -147,3 +147,92 @@ def migrar_datos():
 
             documentos = []
 
+            for registro in registros:
+
+                # Convertir la fila en un diccionario
+                documento = dict(zip(columnas, registro))
+
+                # Adaptar los valores Decimal para MongoDB
+                documento = convertir_valores(documento)
+
+                # Agregar el documento a la lista
+                documentos.append(documento)
+
+            # ==================================================
+            # 8. SELECCIONAR LA COLECCIÓN EN MONGODB
+            # ==================================================
+
+            coleccion = base_datos[nombre_tabla]
+
+            # ==================================================
+            # 9. LIMPIAR LA COLECCIÓN ANTES DE MIGRAR
+            # ==================================================
+
+            # Evitar duplicar registros en nuevas migraciones
+            coleccion.delete_many({})
+
+            # ==================================================
+            # 10. INSERTAR LOS DOCUMENTOS EN MONGODB
+            # ==================================================
+
+            if documentos:
+
+                coleccion.insert_many(documentos)
+
+            # ==================================================
+            # 11. MOSTRAR RESULTADOS POR TABLA
+            # ==================================================
+
+            cantidad = len(documentos)
+
+            print(f"Registros migrados: {cantidad}")
+
+            # Actualizar los contadores
+            total_tablas += 1
+            total_registros += cantidad
+
+        # ==================================================
+        # 12. MOSTRAR RESUMEN GENERAL
+        # ==================================================
+
+        print("\n==========================================")
+        print("          RESUMEN DE MIGRACIÓN")
+        print("==========================================")
+
+        print(f"Total de tablas migradas: {total_tablas}")
+        print(f"Total de registros migrados: {total_registros}")
+
+        print("\n¡Migración finalizada correctamente!")
+
+    except Exception as error:
+
+        # Mostrar cualquier error que ocurra
+        print("\nError durante la migración:")
+        print(error)
+
+    finally:
+
+        # ==================================================
+        # 13. CERRAR LAS CONEXIONES
+        # ==================================================
+
+        if cursor is not None:
+            cursor.close()
+
+        if conexion_mysql is not None and conexion_mysql.is_connected():
+            conexion_mysql.close()
+
+        if cliente_mongo is not None:
+            cliente_mongo.close()
+
+        print("\nConexiones cerradas.")
+
+
+# ==========================================================
+# EJECUCIÓN PRINCIPAL
+# ==========================================================
+
+# Ejecutar la migración cuando se inicia este archivo
+if __name__ == "__main__":
+
+    migrar_datos()

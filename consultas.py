@@ -1,3 +1,4 @@
+
 from conexion import conectar_mongodb
 from decimal import Decimal
 from bson.decimal128 import Decimal128
@@ -94,6 +95,106 @@ def listar_categorias_productos():
                 print("Esta categoría no tiene productos.")
 
         print("\nConsulta finalizada.")
+
+    finally:
+        if cliente is not None:
+            cliente.close()
+
+            # ==============================================
+            # CONSULTA 2: INVENTARIO POR CATEGORÍA
+            # ==============================================
+
+            def consultar_inventario():
+
+                cliente, db = obtener_base_datos()
+
+                try:
+                    categorias = db["categories"]
+                    productos = db["products"]
+
+                    category_id = int(input("Digite el código de la categoría: "))
+
+                    categoria = categorias.find_one({"CategoryID": category_id})
+
+                    if categoria is None:
+                        print("Categoría no encontrada.")
+                        return
+
+                    print("\nCategoría:", categoria.get("CategoryName"))
+                    print("-" * 75)
+                    print("Código    Producto                  Precio    Existencia    Total")
+
+                    total_categoria = 0
+
+                    lista_productos = productos.find({"CategoryID": category_id})
+
+                    for producto in lista_productos:
+                        codigo = producto.get("ProductID")
+                        nombre = producto.get("ProductName")
+                        precio = convertir_decimal(producto.get("UnitPrice"))
+                        existencia = producto.get("UnitsInStock") or 0
+
+                        total = precio * existencia
+                        total_categoria += total
+
+                        print(codigo, nombre, precio, existencia, total)
+
+                    print("-" * 75)
+                    print("TOTAL DE LA CATEGORÍA:", total_categoria)
+
+                finally:
+                    if cliente is not None:
+                        cliente.close()
+
+
+# ==============================================
+# CONSULTA 3: FACTURA COMPLETA
+# ==============================================
+
+def consultar_factura():
+
+    cliente, db = obtener_base_datos()
+
+    try:
+        ordertotal = db["Ordertotal"]
+
+        order_id = int(input("Digite el número del pedido: "))
+
+        pipeline = [
+            {"$match": {"OrderID": order_id}}
+        ]
+
+        factura = list(ordertotal.aggregate(pipeline))
+
+        if len(factura) == 0:
+            print("No se encontró la factura.")
+            return
+
+        factura = factura[0]
+
+        print("\n========== FACTURA ==========")
+
+        print("Número de pedido:", factura.get("OrderID"))
+
+        print("\n--- CLIENTE ---")
+        mostrar_documento(factura.get("Customer"))
+
+        print("\n--- EMPLEADO ---")
+        mostrar_documento(factura.get("Employee"))
+
+        print("\n--- PRODUCTOS ---")
+
+        for detalle in factura.get("Details", []):
+
+            mostrar_documento(detalle.get("Product"))
+
+            print("Cantidad:", detalle.get("Quantity"))
+            print("Precio:", detalle.get("UnitPrice"))
+            print("Descuento:", detalle.get("Discount"))
+            print("Total:", detalle.get("LineTotal"))
+            print("--------------------------")
+
+        print("\nTOTAL DE LA FACTURA:", factura.get("InvoiceTotal"))
 
     finally:
         if cliente is not None:
